@@ -11,9 +11,13 @@
     "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
     "@types/node": "^22.10.1",
-    "typescript": "^5.5.3",
-    "ts-node": "^10.9.2"
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
   },
   "private": true
 }
