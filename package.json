@@ -1,0 +1,19 @@
+{
+  "name": "aoc-2024",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node ./src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.5.3",
+    "ts-node": "^10.9.2"
+  },
+  "private": true
+}
