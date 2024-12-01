@@ -1,8 +1,6 @@
-import {pipeline} from "./day01";
+import {p1pipeline, p2pipeline} from "./day01";
 
-test('day1 example works', () => {
-
-    let exampleInput = `
+const exampleInput = `
 3   4
 4   3
 2   5
@@ -10,7 +8,16 @@ test('day1 example works', () => {
 3   9
 3   3`;
 
-    const result = pipeline(exampleInput);
+test('day1 part1 example works', () => {
+
+    const result = p1pipeline(exampleInput);
 
     expect(result).toEqual(11);
+})
+
+test('day1 part2 example works', () => {
+
+    const result = p2pipeline(exampleInput);
+
+    expect(result).toEqual(31);
 })
