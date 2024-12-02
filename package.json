@@ -8,7 +8,9 @@
     "start": "ts-node ./src/index.ts"
   },
   "dependencies": {
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "lodash": "^4.17.21",
+    "purify-ts": "^2.1.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.0",
