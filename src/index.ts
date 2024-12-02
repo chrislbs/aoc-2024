@@ -1,6 +1,7 @@
 import {program, Option} from "commander";
 import {Solution} from "./solutions/solution";
 import day1 from "./solutions/day01";
+import day2 from "./solutions/day02";
 
 program.option('-d, --day <number>', 'day')
 program.addOption(new Option('-p, --part <number>', 'part').choices(['1', '2']))
@@ -9,14 +10,15 @@ program.parse(process.argv);
 const options = program.opts();
 
 const solutions = new Map<number, Solution>([
-    [1, day1]
-    ]);
+    [1, day1],
+    [2, day2]
+]);
 
 let selectedDay : number | undefined;
 if(options.day) {
     selectedDay = options.day;
 } else {
-    selectedDay = solutions.keys().next().value
+    selectedDay = Array.from(solutions.keys()).pop()
 }
 
 let solution : Solution | undefined;
