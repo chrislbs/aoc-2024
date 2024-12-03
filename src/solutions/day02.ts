@@ -11,7 +11,7 @@ function parseInput(input: string): number[][] {
 
 function isReportSafe(levels: number[]): boolean {
 
-    const increasing = levels[0] < levels[levels.length - 1];
+    const increasing = levels[0] < levels[1];
     for (let i = 0; i < levels.length - 1; i++) {
 
         const diff = levels[i + 1] - levels[i];
@@ -26,6 +26,23 @@ function isReportSafe(levels: number[]): boolean {
     return true;
 }
 
+function p2IsReportSafe(levels: number[]) : boolean {
+    if(isReportSafe(levels)) {
+        return true;
+    }
+
+    for(let i = 0; i < levels.length; i++) {
+        const clonedLevels = [...levels];
+        clonedLevels.splice(i, 1);
+        if(isReportSafe(clonedLevels)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 export function p1pipeline(input: string): number {
     return parseInput(input)
         .filter(levels => isReportSafe(levels))
@@ -33,16 +50,22 @@ export function p1pipeline(input: string): number {
 }
 
 function part1(): number {
-    return p1pipeline(readPuzzleInput(2))
+    return p1pipeline(readPuzzleInput(2));
+}
+
+export function p2pipeline(input: string): number {
+    return parseInput(input)
+        .filter(levels => p2IsReportSafe(levels))
+        .length
 }
 
 function part2(): number {
-    return 1
+    return p2pipeline(readPuzzleInput(2));
 }
 
 const day2: Solution = {
     part1: part1,
-    part2: undefined
+    part2: part2
 }
 
 export default day2;
