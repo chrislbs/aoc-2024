@@ -99,6 +99,29 @@ function xmasLocs(input: puzzleInput, xLoc: location): direction[] {
     return Array.from(dirsToSearch);
 }
 
+const validMasXArray = ["M", "M", "S", "S"]
+
+function hasRequiredMasXLetters(input: string[]) {
+    return input.length === 4 && input.every((letter, idx) => letter === validMasXArray[idx]);
+}
+
+function isMasX(input: puzzleInput, aLoc: location): boolean {
+    const nwLetter = getRelativeLetter(input, aLoc, 1, direction.NW);
+    const neLetter = getRelativeLetter(input, aLoc, 1, direction.NE);
+    const swLetter = getRelativeLetter(input, aLoc, 1, direction.SW);
+    const seLetter = getRelativeLetter(input, aLoc, 1, direction.SE);
+
+    if (nwLetter === seLetter || swLetter === neLetter) {
+        return false;
+    }
+
+    const dirLetters = [nwLetter, neLetter, swLetter, seLetter]
+        .filter(l => l === "M" || l === "S")
+        .sort();
+
+    return hasRequiredMasXLetters(dirLetters);
+}
+
 export function p1pipeline(input: string): number {
     const puzzleInput = parseInput(input);
 
@@ -116,17 +139,33 @@ export function p1pipeline(input: string): number {
 }
 
 
+export function p2pipeline(input: string): number {
+    const puzzleInput = parseInput(input);
+
+    let count = 0;
+    for (let y = 0; y < puzzleInput.length; y++) {
+        for (let x = 0; x < puzzleInput[y].length; x++) {
+            if (puzzleInput[y][x] === "A" && isMasX(puzzleInput, {x: x, y: y})) {
+                count += 1
+            }
+        }
+    }
+
+    return count;
+}
+
+
 function part1(): number {
     return p1pipeline(readPuzzleInput(4));
 }
 
 function part2(): number {
-    return 1;
+    return p2pipeline(readPuzzleInput(4));
 }
 
 const day4: Solution = {
     part1: part1,
-    // part2: part2
+    part2: part2
 }
 
 export default day4;
