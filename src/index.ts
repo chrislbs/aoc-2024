@@ -4,6 +4,7 @@ import day1 from "./solutions/day01";
 import day2 from "./solutions/day02";
 import day3 from "./solutions/day03";
 import day4 from "./solutions/day04";
+import day5 from "./solutions/day05";
 
 program.option('-d, --day <number>', 'day')
 program.addOption(new Option('-p, --part <number>', 'part').choices(['1', '2']))
@@ -16,6 +17,7 @@ const solutions = new Map<number, Solution>([
     [2, day2],
     [3, day3],
     [4, day4],
+    [5, day5],
 ]);
 
 let selectedDay : number | undefined;
