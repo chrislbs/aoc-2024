@@ -32,10 +32,9 @@ const exampleInput = `
 `;
 
 test('day5 part1 example works', () => {
-    // console.log(parseInput(exampleInput));
     expect(p1pipeline(exampleInput)).toEqual(143)
 })
 
 test('day5 part2 example works', () => {
-    expect(p2pipeline(exampleInput)).toEqual(1)
+    expect(p2pipeline(exampleInput)).toEqual(123)
 })
