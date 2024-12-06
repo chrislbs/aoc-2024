@@ -14,3 +14,4 @@ yarn-error.log*
 .idea/
 inputs/*.txt
 dist/
+*.0x/
