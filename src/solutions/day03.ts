@@ -69,7 +69,7 @@ function part2(): number {
 
 const day3: Solution = {
     part1: part1,
-    // part2: part2
+    part2: part2
 }
 
 export default day3;

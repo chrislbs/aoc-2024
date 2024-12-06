@@ -24,7 +24,7 @@ const solutions = new Map<number, Solution>([
 
 let selectedDay : number | undefined;
 if(options.day) {
-    selectedDay = options.day;
+    selectedDay = parseInt(options.day);
 } else {
     selectedDay = Array.from(solutions.keys()).pop()
 }
@@ -52,7 +52,7 @@ if(part === undefined) {
         solutionFunc = solution.part2;
         part = 2
     }
-} else if(part == 1) {
+} else if(part == "1") {
     solutionFunc = solution.part1;
 } else {
     solutionFunc = solution.part2
