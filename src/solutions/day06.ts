@@ -26,31 +26,113 @@ const movements = [
     [0, -1],
 ]
 
-function nextDir(direction: direction): direction {
-    return (direction + 1) % 4;
+class Location {
+    constructor(public readonly x: number, public readonly y: number) {
+    }
 }
 
-function isObstruction(mapState: mapState, location: location): boolean {
-    return mapState.map[location.y][location.x] === OBSTRUCTION ||
-        mapState.map[location.y][location.x] === NEW_OBSTRUCTION;
+type locationFactory = (y: number, x: number) => Location;
+
+// factory builder for locations so we can use reference equality in Maps/Sets
+function buildLocationFactory(map: string[][]) {
+    const allLocations = new Array<Location[]>(map.length);
+    for (let y = 0; y < map.length; y++) {
+        const rows = map[y];
+        const rowLocations = new Array<Location>(rows.length);
+        for (let x = 0; x < rows.length; x++) {
+            rowLocations[x] = new Location(x, y)
+        }
+        allLocations[y] = rowLocations;
+    }
+
+    return (y: number, x: number) => {
+        return allLocations[y][x]
+    }
 }
 
-type location = {
-    x: number;
-    y: number;
+class LabMap {
+    readonly map: string[][]
+
+    constructor(map: string[][]) {
+        this.map = map
+    }
+
+    isObstruction(location: Location): boolean {
+        return this.map[location.y][location.x] === OBSTRUCTION
+    }
+
+    inBounds(y: number, x: number): boolean {
+        return y >= 0 && y < this.map.length && x >= 0 && x < this.map[y].length;
+    }
 }
 
-type mapState = {
-    map: string[][]
-    guardPosition: location;
-    guardDirection: direction;
+class Guard {
+    location: Location
+    direction: direction
+
+    constructor(initialLocation: Location, direction: direction) {
+        this.location = initialLocation;
+        this.direction = direction;
+    }
+
+    nextDirection(): direction {
+        return (this.direction + 1) % 4;
+    }
+
+    nextLocation(map: LabMap, locationFactory: locationFactory): Location | undefined {
+        const offsets = movements[this.direction];
+        const {y, x} = this.location;
+        const nextLoc = {y: y + offsets[0], x: x + offsets[1]};
+        if (map.inBounds(nextLoc.y, nextLoc.x)) {
+            return locationFactory(nextLoc.y, nextLoc.x);
+        }
+        return undefined
+    }
+
+    /**
+     * Based on this map, take a step. Return the new location or undefined if it walks us off the map
+     */
+    step(map: LabMap, locationFactory: locationFactory, additionalObstruction?: Location): Location | undefined {
+        let nextLocation = this.nextLocation(map, locationFactory);
+        let nextDirection = this.nextDirection();
+        if (nextLocation === undefined) {
+            return undefined;
+        }
+        if (map.isObstruction(nextLocation) || nextLocation == additionalObstruction) {
+            this.direction = nextDirection;
+        } else {
+            this.location = nextLocation;
+        }
+        return this.location;
+    }
+
+    isInLoop(map: LabMap, locationFactory: locationFactory, additionalObstruction: Location): boolean {
+        const visitedPositions = new Map<Location, direction[]>();
+        let nextLocation = this.nextLocation(map, locationFactory);
+        while (nextLocation != undefined) {
+            const visitedDirs = visitedPositions.get(this.location) || [];
+            if (visitedDirs.includes(this.direction)) {
+                return true;
+            }
+
+            visitedDirs.push(this.direction);
+            visitedPositions.set(this.location, visitedDirs);
+
+            nextLocation = this.step(map, locationFactory, additionalObstruction);
+        }
+        return false;
+    }
+
+    clone() {
+        return new Guard(this.location, this.direction);
+    }
 }
 
-export function parseInput(input: string): mapState {
+export function parseInput(input: string) {
 
     const lines = input.trim().split("\n");
     const map = new Array<string[]>(lines.length);
-    let guardPosition: location;
+    let guardPosition;
     for (let y = 0; y < lines.length; y++) {
         const line = lines[y];
         const mapRow = new Array<string>(line.length);
@@ -63,207 +145,59 @@ export function parseInput(input: string): mapState {
         map[y] = mapRow;
     }
 
+    const locationFactory = buildLocationFactory(map);
+    const guardLocation = locationFactory(guardPosition!.y, guardPosition!.x);
+
     return {
-        map: map,
-        guardPosition: guardPosition!,
-        guardDirection: direction.UP,
+        map: new LabMap(map),
+        guard: new Guard(guardLocation, direction.UP),
+        locationFactory: locationFactory,
     }
-}
-
-function inBounds(map: string[][], location: location): boolean {
-    const {x, y} = location;
-    return y >= 0 && y < map.length && x >= 0 && x < map[y].length;
-}
-
-// get the next location we'd be if there were no obstacle
-function calcNextLocation(mapState: mapState): location {
-    const {guardPosition, guardDirection} = mapState;
-
-    const offsets = movements[guardDirection];
-    const {y, x} = guardPosition;
-    return {y: y + offsets[0], x: x + offsets[1]};
-}
-
-// in front, turn right 90 degress
-// otherwise, step forward
-function step(mapState: mapState): location {
-    const {guardPosition, guardDirection, map} = mapState;
-
-    const offsets = movements[guardDirection];
-    const {y, x} = guardPosition;
-    let nextLocation = {y: guardPosition.y + offsets[0], x: guardPosition.x + offsets[1]};
-    let nextDirection = guardDirection;
-    if (inBounds(map, nextLocation)) {
-        if (isObstruction(mapState, nextLocation)) {
-            nextLocation = guardPosition;
-            nextDirection = nextDir(guardDirection);
-            map[y][x] = directions[nextDirection]
-        } else {
-            map[y][x] = "."
-            if (inBounds(map, nextLocation)) {
-                map[nextLocation.y][nextLocation.x] = directions[guardDirection];
-            }
-        }
-    }
-    mapState.guardPosition = nextLocation;
-    mapState.guardDirection = nextDirection;
-    return nextLocation;
 }
 
 export function p1pipeline(input: string): number {
 
-    const mapState = parseInput(input);
+    const {map, locationFactory, guard} = parseInput(input);
 
-    let numSteps = 0;
-    // key is y, value is x
-    const visitedPositions = new Map<number, Set<number>>();
-    while (inBounds(mapState.map, mapState.guardPosition)) {
-        const guardPosition = mapState.guardPosition;
-        const visitedOnRow = visitedPositions.get(guardPosition.y) || new Set<number>();
-        visitedOnRow.add(guardPosition.x);
-        visitedPositions.set(guardPosition.y, visitedOnRow);
+    const visitedPositions = new Set<Location>();
+    let nextLocation = guard.nextLocation(map, locationFactory);
+    while (nextLocation != undefined) {
+        visitedPositions.add(nextLocation);
 
-        step(mapState);
-        numSteps += 1;
+        nextLocation = guard.step(map, locationFactory);
     }
 
-    let distinctLocations = 0;
-    visitedPositions.forEach((xPositions, _) => {
-        distinctLocations += xPositions.size;
-    })
-
-    return distinctLocations;
-}
-
-function parseObstaclePositions(mapState: mapState) {
-    const obstaclesByRow = new Map<number, number[]>();
-    const obstaclesByCol = new Map<number, number[]>();
-    for (let y = 0; y < mapState.map.length; y++) {
-        for (let x = 0; x < mapState.map.length; x++) {
-            if (isObstruction(mapState, {x: x, y: y})) {
-                let obstaclesInRow = obstaclesByRow.get(y) || [];
-                obstaclesInRow.push(x);
-                obstaclesByRow.set(y, obstaclesInRow);
-
-                let obstaclesInCol = obstaclesByCol.get(x) || [];
-                obstaclesInCol.push(y);
-                obstaclesByCol.set(x, obstaclesInCol)
-            }
-        }
-    }
-
-    return {
-        obstaclesByCol,
-        obstaclesByRow
-    };
-}
-
-function isLoop(mapState: mapState): boolean {
-    const visitedPositions = new Map<number, Map<number, Set<string>>>();
-    while (inBounds(mapState.map, mapState.guardPosition)) {
-        const {guardPosition, guardDirection} = mapState;
-
-        if (visitedPositions.has(guardPosition.y) &&
-            visitedPositions.get(guardPosition.y)!.has(guardPosition.x) &&
-            visitedPositions.get(guardPosition.y)!.get(guardPosition.x)!.has(directions[guardDirection])) {
-            return true;
-        }
-
-        const visitedRow = visitedPositions.get(guardPosition.y) || new Map<number, Set<string>>();
-        const visitedDirs = visitedRow.get(guardPosition.x) || new Set<string>();
-        visitedDirs.add(directions[guardDirection]);
-        visitedRow.set(guardPosition.x, visitedDirs);
-        visitedPositions.set(guardPosition.y, visitedRow);
-
-
-        step(mapState);
-    }
-    return false;
-}
-
-function renderMap(mapState: mapState) {
-    const render = mapState.map.map(row => row.join("")).join("\n");
-    console.log(render);
+    return visitedPositions.size;
 }
 
 export function p2pipeline(input: string): number {
 
-    const originalState = parseInput(input);
-    const startLocation = originalState.guardPosition;
+    const {map, locationFactory, guard} = parseInput(input);
+    const startLocation = guard.location;
 
-    const cloneState = (s: mapState) => JSON.parse(JSON.stringify(s)) as mapState;
+    const testedObstructions = new Set<Location>();
+    const loopingObstructions = new Set<Location>();
 
-    const testedObstructions = new Map<number, Set<number>>();
-    const loopingObstructions = new Array<location>();
-    const {obstaclesByRow, obstaclesByCol} = parseObstaclePositions(originalState);
+    let nextLocation = guard.nextLocation(map, locationFactory);
+    while (nextLocation != undefined) {
 
-    let numSteps = 0;
-    let mapState = cloneState(originalState);
-    while (inBounds(mapState.map, mapState.guardPosition)) {
-        const {guardPosition, guardDirection} = mapState;
+        const obstructionLocation = guard.nextLocation(map, locationFactory);
 
-        const nextDirectionIfObstaclePlaced = nextDir(guardDirection);
-        const obstructionLocation = calcNextLocation(mapState);
-        let obstructionCandidate = false;
-
-        // If we're heading UP or DOWN, look down the current row for an obstacle
-        // if we're heading LEFT or RIGHT, look down the current column.
-        let positionsToCheck;
-        let position;
-        let comparisonFunc;
-        if (nextDirectionIfObstaclePlaced % 3 === 0) {
-            // moving up or left means obstacle must be < curPos
-            comparisonFunc = (curPos: number, obs: number) => obs < curPos;
-        } else {
-            comparisonFunc = (curPos: number, obs: number) => obs > curPos;
-        }
-        if (guardDirection % 2 === 0) {
-            // we're going up or down - look through the row for obstacles
-            positionsToCheck = obstaclesByRow.get(guardPosition.y) || [];
-            position = guardPosition.x
-        } else {
-            // we're going left or right - look up and down the column for obstacles
-            positionsToCheck = obstaclesByCol.get(guardPosition.x) || [];
-            position = guardPosition.y
-        }
-        for (let i = 0; i < positionsToCheck.length; i++) {
-            const obstaclePosition = positionsToCheck[i];
-            if (comparisonFunc(position, obstaclePosition)) {
-                obstructionCandidate = true;
-                break;
+        if (obstructionLocation != undefined &&
+            !testedObstructions.has(obstructionLocation) &&
+            !map.isObstruction(obstructionLocation) &&
+            obstructionLocation !== startLocation) {
+            const loopingGuard = guard.clone()
+            if (loopingGuard.isInLoop(map, locationFactory, obstructionLocation)) {
+                loopingObstructions.add(obstructionLocation);
             }
+            testedObstructions.add(obstructionLocation);
         }
 
-        // Make sure the location is:
-        // 1. Not already an obstruction
-        // 2. In bounds
-        // 3. Not one we've tested before
-        // 4. Is not the starting location
-        const hasTestedLocation = testedObstructions.has(obstructionLocation.y) && testedObstructions.get(obstructionLocation.y)!.has(obstructionLocation.x);
-        const isNotOriginalLocation = startLocation.y !== obstructionLocation.y || startLocation.x !== obstructionLocation.x;
-        if (obstructionCandidate &&
-            inBounds(mapState.map, obstructionLocation) &&
-            !isObstruction(mapState, obstructionLocation) &&
-            !hasTestedLocation &&
-            isNotOriginalLocation
-        ) {
-            // create a fresh state with a new obstruction, and check if it loops
-            const stateWithNewObstruction = cloneState(mapState);
-            stateWithNewObstruction.map[obstructionLocation.y][obstructionLocation.x] = NEW_OBSTRUCTION;
-
-            if (isLoop(stateWithNewObstruction)) {
-                loopingObstructions.push(obstructionLocation);
-            } else {
-            }
-            const testedRow = testedObstructions.get(obstructionLocation.y) || new Set<number>();
-            testedRow.add(obstructionLocation.x);
-            testedObstructions.set(obstructionLocation.y, testedRow);
-        }
-
-        step(mapState);
+        nextLocation = guard.step(map, locationFactory);
     }
 
-    return loopingObstructions.length;
+    return loopingObstructions.size;
 }
 
 
