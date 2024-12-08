@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "commander": "^12.1.0",
+    "js-combinatorics": "^2.1.2",
     "lodash": "^4.17.21",
     "purify-ts": "^2.1.0"
   },

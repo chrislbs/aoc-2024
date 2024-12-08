@@ -11,6 +11,9 @@ importers:
       commander:
         specifier: ^12.1.0
         version: 12.1.0
+      js-combinatorics:
+        specifier: ^2.1.2
+        version: 2.1.2
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -1754,6 +1757,9 @@ packages:
     peerDependenciesMeta:
       node-notifier:
         optional: true
+
+  js-combinatorics@2.1.2:
+    resolution: {integrity: sha512-/1AY2bYwxajoaKjPzvgQ80U7lcucU71ubzFPVgZGmzbDGn3R18ZQUZfD69+4Idg4JfNcq6trwD6I+dRfVnr/tg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4877,6 +4883,8 @@ snapshots:
       - babel-plugin-macros
       - supports-color
       - ts-node
+
+  js-combinatorics@2.1.2: {}
 
   js-tokens@4.0.0: {}
 
