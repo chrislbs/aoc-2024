@@ -72,6 +72,41 @@ class AntennaMap {
 
         return antiNodeLocations;
     }
+
+    findAllAntiNodesP2() : Set<Location> {
+        const antiNodeLocations = new Set<Location>();
+
+        for(let antennaKey of this.antennaLocations.keys()) {
+            const antennas = Array.from(this.antennaLocations.get(antennaKey)!.values());
+
+            // need every combination of 2 pairs to calculate antinodes
+            const antennaCombos = new Combination(antennas, 2);
+            for(let combo of antennaCombos) {
+                let loc1 = combo[0];
+                let loc2 = combo[1];
+                const dist = loc1.manhattanDistance(loc2);
+
+                // always include the antennas themselves
+                antiNodeLocations.add(loc1);
+                antiNodeLocations.add(loc2);
+
+                // go in each direction until the locs would be out of bounds
+                while(this.inBounds(loc1.y + dist[0], loc1.x + dist[1])) {
+                    const newLoc = this.createLocation(loc1.y + dist[0], loc1.x + dist[1]);
+                    antiNodeLocations.add(newLoc);
+                    loc1 = newLoc;
+                }
+
+                while(this.inBounds(loc2.y - dist[0], loc2.x - dist[1])) {
+                    const newLoc = this.createLocation(loc2.y - dist[0], loc2.x - dist[1]);
+                    antiNodeLocations.add(newLoc);
+                    loc2 = newLoc;
+                }
+            }
+        }
+
+        return antiNodeLocations;
+    }
 }
 
 export function parseInput(input: string) {
@@ -88,7 +123,9 @@ export function p1pipeline(input: string): number {
 
 
 export function p2pipeline(input: string): number {
-    return 2;
+    const antiNodes = parseInput(input).findAllAntiNodesP2();
+
+    return antiNodes.size;
 }
 
 function part1(): number {
@@ -101,7 +138,7 @@ function part2(): number {
 
 const day8: Solution = {
     part1: part1,
-    // part2: part2
+    part2: part2
 }
 
 export default day8;
