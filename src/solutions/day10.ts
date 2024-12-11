@@ -34,7 +34,7 @@ class TrailMap {
         }
     }
 
-    private calcTrailHeadScore(trailHead: Location):number {
+    private calcTrailHeadScore(trailHead: Location, allowRevisits: boolean):number {
         const visitedLocations = new Set<Location>();
         const locationsToVisit = new Stack<Location>()
         locationsToVisit.add(trailHead)
@@ -55,7 +55,7 @@ class TrailMap {
                 const movementVector = getUnitVector(i)
                 const nextLocation = this.getNextLocation(curLocation, movementVector);
                 if(nextLocation === undefined ||
-                    visitedLocations.has(nextLocation) ||
+                    (!allowRevisits && visitedLocations.has(nextLocation)) ||
                     this.map[nextLocation.y][nextLocation.x] - curHeight != 1) {
                     continue;
                 }
@@ -66,12 +66,12 @@ class TrailMap {
         return ninesVisited;
     }
 
-    findTrailHeadScores(): Map<Location, number> {
+    findTrailHeadScores(allowRevisits: boolean): Map<Location, number> {
         const trailHeadScores = new Map<Location, number>();
 
         for(let i = 0; i < this.trailHeads.length; i++) {
             const loc = this.trailHeads[i]
-            const score = this.calcTrailHeadScore(loc)
+            const score = this.calcTrailHeadScore(loc, allowRevisits)
             trailHeadScores.set(loc, score);
         }
 
@@ -99,12 +99,14 @@ export function parseInput(input: string): TrailMap {
 export function p1pipeline(input: string): number {
     const trailMap = parseInput(input);
 
-    return Array.from(trailMap.findTrailHeadScores().values()).reduce((a, b) => a + b)
+    return Array.from(trailMap.findTrailHeadScores(false).values()).reduce((a, b) => a + b)
 }
 
 
 export function p2pipeline(input: string): number {
-    return 2;
+    const trailMap = parseInput(input);
+
+    return Array.from(trailMap.findTrailHeadScores(true).values()).reduce((a, b) => a + b)
 }
 
 function part1(): number {
@@ -117,7 +119,7 @@ function part2(): number {
 
 const day10: Solution = {
     part1: part1,
-    // part2: part2
+    part2: part2
 }
 
 export default day10;

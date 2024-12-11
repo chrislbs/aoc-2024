@@ -1,4 +1,4 @@
-import {p1pipeline, parseInput} from "./day10";
+import {p1pipeline, p2pipeline} from "./day10";
 
 const examples = [
     `
@@ -44,6 +44,18 @@ const examples = [
 10456732`
 ]
 
+const p2Examples = [
+    `
+.....0.
+..4321.
+..5..2.
+..6543.
+..7..4.
+..8765.
+..9....
+    `
+]
+
 test('day10 part1 example works', () => {
     expect(p1pipeline(examples[0])).toEqual(1)
     expect(p1pipeline(examples[1])).toEqual(2)
@@ -53,4 +65,6 @@ test('day10 part1 example works', () => {
 })
 
 test('day10 part2 example works', () => {
+    expect(p2pipeline(p2Examples[0])).toEqual(3)
+    expect(p2pipeline(examples[4])).toEqual(81)
 })
