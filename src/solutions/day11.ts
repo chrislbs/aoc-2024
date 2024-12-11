@@ -11,6 +11,7 @@ type StoneNode = {
 }
 
 class Stones {
+    engravings: number[]
     private headStone: StoneNode
     // 0 => 1
     // even number of digits 10, 1000, 100000 -> 2 stones
@@ -20,6 +21,7 @@ class Stones {
     // if none of these, reaplce with new stone and multiplie original by 2024
     constructor(engravings: number[]) {
         assert(engravings.length > 0);
+        this.engravings = engravings
 
         this.headStone = {
             engraving: engravings[0]
@@ -38,36 +40,35 @@ class Stones {
         }
     }
 
-    blink() {
+    stonesProduced(engraving: number, blinkDepth: number, maxDepth: number, generatedStonesCounts: Map<string, number>) {
 
-        let curStone: StoneNode | undefined = this.headStone;
-        while(curStone !== undefined) {
-
-            const engravingDigits = Math.floor(Math.log10(curStone.engraving) + 1);
-
-            if(curStone.engraving === 0) {
-                curStone.engraving = 1;
-            } else if (engravingDigits % 2 === 0) {
-                const splitLeftStone: StoneNode = {
-                    engraving: Math.floor(curStone.engraving / (Math.pow(10, engravingDigits / 2))),
-                    prevStone : curStone.prevStone,
-                    nextStone: curStone
-                }
-                if(splitLeftStone.prevStone !== undefined) {
-                    splitLeftStone.prevStone.nextStone = splitLeftStone
-                } else {
-                    // the split left will become the new head
-                    this.headStone = splitLeftStone;
-                }
-
-                curStone.prevStone = splitLeftStone;
-                curStone.engraving = curStone.engraving % Math.pow(10, engravingDigits / 2);
-            } else {
-                curStone.engraving *= 2024
-            }
-
-            curStone = curStone.nextStone
+        const depthKey = this.depthKey(engraving, blinkDepth);
+        if(generatedStonesCounts.has(depthKey)) {
+            return generatedStonesCounts.get(depthKey)!;
         }
+        if(blinkDepth == maxDepth) {
+            return 1;
+        }
+
+        const engravingDigits = Math.floor(Math.log10(engraving) + 1);
+
+        let engravingCount = 0;
+        if(engraving === 0) {
+            engravingCount = this.stonesProduced(1, blinkDepth + 1, maxDepth, generatedStonesCounts);
+        } else if (engravingDigits % 2 === 0) {
+            const lhs = Math.floor(engraving / (Math.pow(10, engravingDigits / 2)))
+            const rhs = engraving % Math.pow(10, engravingDigits / 2);
+            engravingCount = this.stonesProduced(lhs, blinkDepth + 1, maxDepth, generatedStonesCounts) + this.stonesProduced(rhs, blinkDepth + 1, maxDepth, generatedStonesCounts);
+        } else {
+            const nextEngraving = engraving * 2024
+            engravingCount = this.stonesProduced(nextEngraving, blinkDepth + 1, maxDepth, generatedStonesCounts);
+        }
+        generatedStonesCounts.set(depthKey, engravingCount);
+        return engravingCount;
+    }
+
+    depthKey(engraving: number, blinkDepth: number) {
+        return `${blinkDepth}:${engraving}`;
     }
 
     render(): string {
@@ -102,16 +103,26 @@ export function parseInput(input: string) {
 export function p1pipeline(input: string): number {
     const stones = parseInput(input);
 
+    const engravings = stones.engravings;
+    const engravingDepthToStoneCount = new Map<string, number>();
     const blinkCount = 25;
-    for (let i = 0; i < blinkCount; i++) {
-        stones.blink()
-    }
-    return stones.count();
+
+    return engravings.reduce((acc, engraving) => {
+        return acc + stones.stonesProduced(engraving, 0, blinkCount, engravingDepthToStoneCount)
+    }, 0)
 }
 
 
 export function p2pipeline(input: string): number {
-    return 2;
+    const stones = parseInput(input);
+
+    const engravings = stones.engravings;
+    const engravingDepthToStoneCount = new Map<string, number>();
+    const blinkCount = 75;
+
+    return engravings.reduce((acc, engraving) => {
+        return acc + stones.stonesProduced(engraving, 0, blinkCount, engravingDepthToStoneCount)
+    }, 0)
 }
 
 function part1(): number {
@@ -124,7 +135,7 @@ function part2(): number {
 
 const day11: Solution = {
     part1: part1,
-    // part2: part2
+    part2: part2
 }
 
 export default day11;
