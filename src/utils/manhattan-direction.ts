@@ -21,6 +21,14 @@ const unitVectors: [number, number][] = [
     [0, -1],
 ]
 
+export function isUpOrDown(manhattanDirection: manhattanDirection): boolean {
+    return manhattanDirection % 2 == 0
+}
+
+export function getDirectionString(manhattanDirection: manhattanDirection): string {
+    return directions[manhattanDirection]
+}
+
 export function turnRight(currentDir: manhattanDirection): manhattanDirection {
     return (currentDir + 1) % 4;
 }
