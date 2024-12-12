@@ -23,98 +23,38 @@ class Region {
         this.locations = locations
     }
 
-
-    private fillOutsideIter(grid: Grid<string>, curLocation: Location, visitedLocations: Set<Location>) {
-
-        let perimeterSum = 0;
-        const locationsToVisit = new Stack<Location>();
-        locationsToVisit.add(curLocation);
-        while(!locationsToVisit.isEmpty()) {
-            curLocation = locationsToVisit.pop()!
-            if(visitedLocations.has(curLocation)) {
-                continue;
-            }
-            visitedLocations.add(curLocation);
-            for (let dir = manhattanDirection.UP; dir < 4; dir++) {
-                const nextLoc = grid.getNextLocation(curLocation, dir);
-
-                if(nextLoc === undefined || visitedLocations.has(nextLoc)) {
-                    continue
-                }
-
-                if(this.locations.has(nextLoc)) {
-                    // if we can't move a direction from the outside it's because there is a "wall" there
-                    perimeterSum++;
-                } else {
-                    locationsToVisit.push(nextLoc);
-                }
-            }
-        }
-
-        return perimeterSum;
-    }
-
-    private fillInsideIter(grid: Grid<string>, curLocation: Location, visitedLocations: Set<Location>) {
-
-        let perimeterSum = 0;
-
-        const locationsToVisit = new Stack<Location>();
-        locationsToVisit.add(curLocation);
-
-        while (!locationsToVisit.isEmpty()) {
-            const curLocation = locationsToVisit.pop()!;
-            if (visitedLocations.has(curLocation)) {
-                continue;
-            }
-            visitedLocations.add(curLocation);
-            for (let dir = manhattanDirection.UP; dir < 4; dir++) {
-                const nextLoc = grid.getNextLocation(curLocation, dir);
-
-                if (nextLoc === undefined || visitedLocations.has(nextLoc)) {
-                    continue
-                }
-
-                if (this.locations.has(nextLoc)) {
-                    // if we can't move a direction from the outside it's because there is a "wall" there
-                    perimeterSum++;
-                } else {
-                    locationsToVisit.push(nextLoc);
-                }
-            }
-        }
-
-
-        return perimeterSum;
-    }
-
     area() {
         return this.locations.size;
     }
 
     perimeter(grid: Grid<string>) {
         const visitedLocations = new Set<Location>();
-        // const outsidePerimeter = this.fillOutside(grid, grid.getLocation(0, 0)!, visitedLocations);
-        const outsidePerimeter = this.fillOutsideIter(grid, grid.getLocation(0, 0)!, visitedLocations);
 
-        const innerLocations = new Set<Location>();
-        for(let y = 0; y < grid.height; y++) {
-            for(let x = 0; x < grid.width; x++) {
-                const loc = grid.getLocation(y, x)!;
-                if(!visitedLocations.has(loc) && !this.locations.has(loc)) {
-                    innerLocations.add(loc);
+        let perimeterSum = 0;
+        const locationsToVisit = new Stack<Location>();
+        const startingLocation= this.locations.values().next().value!;
+        locationsToVisit.add(startingLocation);
+        while(!locationsToVisit.isEmpty()) {
+            const curLocation = locationsToVisit.pop()!
+            if(visitedLocations.has(curLocation)) {
+                continue;
+            }
+            visitedLocations.add(curLocation);
+            for (let dir = manhattanDirection.UP; dir < 4; dir++) {
+                const nextLoc = grid.getNextLocation(curLocation, dir)!;
+
+                if(!this.locations.has(nextLoc)) {
+                    perimeterSum++;
+                    continue
                 }
+                if(visitedLocations.has(nextLoc)) {
+                    continue
+                }
+                locationsToVisit.push(nextLoc);
             }
         }
 
-        let innerPerimeter = 0;
-        while(innerLocations.size != 0) {
-            const curLoc = innerLocations.values().next().value!;
-            innerLocations.delete(curLoc);
-            // innerPerimeter += this.fillInside(grid, curLoc, innerLocations, visitedLocations);
-            innerPerimeter += this.fillInsideIter(grid, curLoc, visitedLocations);
-
-        }
-        return outsidePerimeter + innerPerimeter;
+        return perimeterSum;
     }
 
     cost(grid: Grid<string>) {
